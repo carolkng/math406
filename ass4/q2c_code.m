@@ -30,9 +30,14 @@ p_exact(r) = (log(r) - log(Rt)) / (log(r0) - log(Rt));
 clf('reset');
 hold on;
 
-x_smooth = r0:0.001:Rt;
-plot(x_smooth, p_exact(x_smooth), '-k');
-x_vec = linspace(r0, Rt, N + 1);
-plot(x_vec, P, ':ok');
+% Actual plot:
+% x_smooth = r0:0.001:Rt;
+% plot(x_smooth, p_exact(x_smooth), '-k');
+% x_vec = linspace(r0, Rt, N + 1);
+% plot(x_vec, P, ':ok');
+%legend('p_{exact}', 'FEM: N=10');
 
-legend('p_{exact}', 'FEM: N=10');
+% Error plot
+plot(x_vec, P - p_exact(x_vec)', ':*k');
+ylabel("Error in FEM approx: N=10")
+xlabel("r")

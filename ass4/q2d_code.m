@@ -21,10 +21,11 @@ t_func(R_sym) = -(mup/w0^2) * (R_sym^2/2*log(R0/R_sym) + 1/4*(R_sym^2 - R0^2));
 % R5 = R(5)
 R5 = fzero(matlabFunction(t_func(R_sym)-t1), [1 5]);
 
-% R_smooth = linspace(R0, R1, 1001);
-% plot(t(R_smooth), R_smooth);
-% xlabel('Time t');
-% ylabel('Radius R(t)');
+clf('reset')
+R_smooth = linspace(R0, R5, 1001);
+plot(t_func(R_smooth), R_smooth);
+xlabel('Time t');
+ylabel('Radius R(t)');
 
 tol = 0.01; % 1 percent tolerance for iteration goodness
 
@@ -83,25 +84,25 @@ for k = 1:Ntime
 end
 
 r_smooth = r0:0.001:R(Ntime);
-
-clf('reset');
-R_matrix = zeros(Ntime+1, N+1);
-for i = 1:Ntime+1
-    R_matrix(i,:) = linspace(r0, R(i), N+1);
-end
-P(1,:) = p_exact(R_matrix(1,:),R_matrix(1,N+1));
-t_vec = 0.0486 + ((1:11)*dt - dt);
-surf(t_vec, P, R_matrix);
-xlabel('time');
-ylabel('pre (R)');
-zlabel('dis');
-
-clf('reset');
-hold on;
-r_smooth = r0:0.001:R5;
-r_vec = linspace(r0, R5, 11);
-plot(r_smooth, p_exact(r_smooth, R5), '-k');
-plot(r_vec, P(Ntime+1, :), '*k');
-legend('p_{exact}', 'FEM: N=10');
-xlabel('r');
-ylabel('p(r,t=5)');
+% 
+% clf('reset');
+% R_matrix = zeros(Ntime+1, N+1);
+% for i = 1:Ntime+1
+%     R_matrix(i,:) = linspace(r0, R(i), N+1);
+% end
+% P(1,:) = p_exact(R_matrix(1,:),R_matrix(1,N+1));
+% t_vec = 0.0486 + ((1:11)*dt - dt);
+% surf(t_vec, P, R_matrix);
+% xlabel('time');
+% ylabel('pre (R)');
+% zlabel('dis');
+% 
+% clf('reset');
+% hold on;
+% r_smooth = r0:0.001:R5;
+% r_vec = linspace(r0, R5, 11);
+% plot(r_smooth, p_exact(r_smooth, R5), '-k');
+% plot(r_vec, P(Ntime+1, :), '*k');
+% legend('p_{exact}', 'FEM: N=10');
+% xlabel('r');
+% ylabel('p(r,t=5)');
