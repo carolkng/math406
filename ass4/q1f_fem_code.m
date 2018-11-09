@@ -82,8 +82,8 @@ plot(x_vec, [0; -1*V_fem(:,2) / V_fem(max_ind,2)], 'ok');
 plot(x_vec, [0; V_fem(:,3) / V_fem(max_ind,3)], 'ok');
 
 % Plot results of FD approximation, which is hella wrong:
-plot(x_vec, V_fd(:,1), '-*b');
-plot(x_vec, V_fd(:,2), '-xb');
-plot(x_vec, V_fd(:,3), '-db');
+% plot(x_vec, V_fd(:,1), '-*b');
+% plot(x_vec, V_fd(:,2), '-xb');
+% plot(x_vec, V_fd(:,3), '-db');
 
 legend("Exact: V1", "Exact: V2", "Exact: V3", "FEM approx: V1", "FEM approx: V2", "FEM approx: V3");
