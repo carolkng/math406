@@ -1,0 +1,565 @@
+==> ./Romberg.m <==
+function [Integral,I,X] = Romberg(f,a,b,tol,kmax)
+I = zeros(kmax, kmax);
+Integral = 0;
+
+for m = 1:kmax
+  if (m == 1)
+    [~, I(1,1)] = trapez(f,a,b,0,1);
+  else
+    for n = 1:m
+      if (n == 1)
+        [~, I(1,m)] = trapez(f,a,b,I(1,m-1),m);
+      else
+        I(n, m-n+1) = I(n-1,m-n+1+1) + (I(n-1,m-n+1+1) - I(n-1,m-n+1))/(4^(n-1) - 1);
+      end
+    end
+  end
+
+    if (abs(I(m,1) - Integral) < tol)
+    X = a:((b - a)/2^(m-1)):b;
+    Integral = I(m,1);
+    return
+  else
+    Integral = I(m,1);
+    X = a:((b - a)/2^(m-1)):b;
+  end
+
+  end
+end
+
+==> ./script_4_sub2.m <==
+f = @(x) (cos(x) - 1 - x.^2/2) .* x.^(-1/2);
+
+a = 0;
+b = (pi/2);
+h1 = 2^(-4);
+h2 = 2^(-6);
+
+I_matrix = [[midpoint_int(f, a, b, h1), midpoint_int(f, a, b, h2)]
+      [gauss_int(f, a, b, h1),  gauss_int(f, a, b, h2)]
+      [trapezium_int_nan(f, a, b,h1), trapezium_int_nan(f, a, b,h2)]];
+
+I_matrix = I_matrix + (2*pi)^(1/2) + (pi/2)^(5/2) / 5;
+
+disp("Target answer: 1.95490284858");
+disp("Subtract 2 terms integrals");
+disp(I_matrix);
+
+==> ./script_3.m <==a = 0;
+b = 1;
+f = @(x) sin(5*x);
+tol = 10^(-7);
+kmax = 6;
+
+[Int, I, X] = Romberg(f,a,b,tol,kmax);
+
+disp(f)
+format long;
+disp("Actual value");
+disp(1/5*(1-cos(5)));
+disp("Romberg integral, tol = 1e-7");
+disp(Int)
+format;
+disp("Table of extrapolated values");
+disp(I)
+==> ./simpson_int.m <==
+function I_simp = simpson_int(f, a, b, h)
+N = (b-a)/h;
+x_odd = 2*h*((1:(N/2 + 1)) - 1) + a;
+x_even = 2*h*((1:(N/2)) - 1) + a + h;
+
+f_odd = f(x_odd);
+f_even = f(x_even);
+I_simp = h/3*(4*sum(f_even) + 2*sum(f_odd) - f_odd(1) - f_odd(N/2+1));
+
+end
+==> ./trapezium_int.m <==
+function I_trap = trapezium_int(f, a, b, h)
+N = (b-a)/h;
+x_k = linspace(a, b, (b-a)/h + 1);
+f_k = f(x_k);
+
+I_trap = h/2*(2*sum(f_k) - f_k(1) - f_k(end));
+
+end
+==> ./script_4_sub1.m <==
+f = @(x) (cos(x) - 1) .* x.^(-1/2);
+
+a = 0;
+b = (pi/2);
+h1 = 2^(-4);
+h2 = 2^(-6);
+
+I_matrix = [[midpoint_int(f, a, b, h1), midpoint_int(f, a, b, h2)]
+      [gauss_int(f, a, b, h1),  gauss_int(f, a, b, h2)]
+      [trapezium_int_nan(f, a, b,h1), trapezium_int_nan(f, a, b,h2)]];
+
+I_matrix = I_matrix + (2*pi)^(1/2);
+
+disp("Target answer: 1.95490284858");
+disp("Subtract 1 term integrals");
+disp(I_matrix);
+
+==> ./script_4.m <==
+f = @(x) x.^(-1/2) .* cos(x);
+
+a = 0;
+b = pi/2;
+h1 = 2^(-4);
+h2 = 2^(-6);
+
+I_matrix = [[midpoint_int(f, a, b, h1), midpoint_int(f, a, b, h2)]
+      [gauss_int(f, a, b, h1),  gauss_int(f, a, b, h2)]];
+
+disp("Target answer: 1.95490284858");
+disp("Direct integrals");
+disp(I_matrix);
+
+==> ./midpoint_int.m <==
+function I_mid = midpoint_int(f, a, b, h)
+x_k = h*(1:(b-a)/h) + a - (0.5)*h;
+I_mid = h*sum(f(x_k));
+
+end
+==> ./trapezium_int_nan.m <==
+function I_trap = trapezium_int_nan(f, a, b, h)
+N = (b-a)/h;
+x_k = linspace(a, b, (b-a)/h + 1);
+f_k = f(x_k);
+
+f_k(isnan(f_k)) = 0;
+
+I_trap = h/2*(2*sum(f_k) - f_k(1) - f_k(end));
+
+end
+==> ./script_5.m <==x0 = 5;
+test_f = @(x) exp(-x) - 10^-5;
+b = fzero(test_f, x0);
+
+disp("Estimate of when I_2 < 10^(-5)");
+disp(b)
+
+f = @(x) cos(x).^2 .* exp(-x);
+a = 0;
+tol = 0.0001;
+kmax = 8;
+[Int, I, X] = Romberg(f,a,b,tol,kmax);
+
+
+==> ./gauss_int.m <==
+function I_gauss = gauss_int(f, a, b, h)
+Z = [-sqrt(3/5) 0 sqrt(3/5)];
+W = [5/9 8/9 5/9];
+h_k = h/2;
+x_mid = h*(1:(b-a)/h) + a - (0.5)*h;
+x_l = x_mid + h_k * Z(1);
+x_r = x_mid + h_k * Z(3);
+
+I_gauss = h_k * (W(1)*sum(f(x_l)) + W(2)*sum(f(x_mid)) + W(3)*sum(f(x_r)));
+
+end
+==> ./script_1.m <==a = 0;
+b = 1;
+f = @(x) sin(5*x);
+h = (b-a)./2.^(1:5);
+
+I = zeros(5, 4);
+
+for i = 1:5
+  I(i, :) = [midpoint_int(f, a, b, h(i)), trapezium_int(f, a, b, h(i)), simpson_int(f, a, b, h(i)), gauss_int(f, a, b, h(i))];
+end
+
+disp(f)
+disp(1/5*(1-cos(5)))
+disp(I)
+a = 0;
+b = pi;
+f = @(x) sin(2*x).^2;
+h = (b-a)./2.^(1:5);
+
+I = zeros(5, 4);
+
+for i = 1:5
+  I(i, :) = [midpoint_int(f, a, b, h(i)), trapezium_int(f, a, b, h(i)), simpson_int(f, a, b, h(i)), gauss_int(f, a, b, h(i))];
+end
+
+disp(f)
+disp(1/2*pi)
+disp(I)
+a = 0;
+b = 2;
+f = @(x) x.^(1/3);
+h = (b-a)./2.^(1:5);
+
+I = zeros(5, 4);
+
+for i = 1:5
+  I(i, :) = [midpoint_int(f, a, b, h(i)), trapezium_int(f, a, b, h(i)), simpson_int(f, a, b, h(i)), gauss_int(f, a, b, h(i))];
+end
+
+disp(f)
+disp(3*2^(-2/3))
+disp(I)
+a = 0;
+b = 1;
+f = @(x) (-log(x)).^(0.5);
+h = (b-a)./2.^(1:5);
+
+I = zeros(5, 2);
+
+for i = 1:5
+  I(i, :) = [midpoint_int(f, a, b, h(i)), gauss_int(f, a, b, h(i))];
+end
+
+disp(f)
+disp(1/2*pi^(0.5))
+disp(I)
+
+
+==> ./trapez.m <==function [h0, val]=trapez(f,a,b,oval,N)
+if (N == 1)
+  val=0.5*(b-a)*(feval(f,a)+feval(f,b));
+  h0=(b-a);
+else
+  i=2^(N-2);
+  h=(b-a)/i;h0=h/2;
+  x=(a+0.5*h):h:b;
+  val=0.5*(oval+h*sum(feval(f,x)));
+end
+
+==> ./script_4_transform.m <==
+f = @(u) 2*cos(u.^2);
+
+a = 0;
+b = (pi/2).^(1/2);
+h1 = 2^(-4);
+h2 = 2^(-6);
+
+I_matrix = [[midpoint_int(f, a, b, h1), midpoint_int(f, a, b, h2)]
+      [gauss_int(f, a, b, h1),  gauss_int(f, a, b, h2)]
+      [trapezium_int(f, a, b,h1), trapezium_int(f, a, b,h2)]];
+
+disp("Target answer: 1.95490284858");
+disp("Transform integrals");
+disp(I_matrix);
+
+==> ./script_5b.m <==
+f = @(x) cos(x).^2;
+x_k = [0.263560   1.413400   3.59643000   7.08581000  12.64080000];
+w_k = [0.521756   0.398667   0.07594240   0.00361176   0.00002337];
+
+Int = f(x_k).*w_k;
+disp("5-point Gauss Laguerre quadrature");
+disp(Int);
+==> ./script_2.m <==
+a = 1i*pi/4;
+b = 1+1i;
+r = 3;
+
+z = @(phi) r*exp(1i*phi) + b;
+f = @(phi) 1/(2*pi) .* sin(z(phi)) ./ (z(phi) - a) .* r .*exp(1i.*phi);
+
+A = 0;
+B = 2*pi;
+N1 = 10;
+N2 = 20;
+h1 = (B - A) / N1;
+h2 = (B - A) / N2;
+
+disp("Target answer:");
+disp(sin(a));
+
+disp("Gauss quadrature, N = 10");
+disp(gauss_int(f, A, B, h1));
+disp("Gauss quadrature, N = 20");
+disp(gauss_int(f, A, B, h2));
+
+disp("Composite trapezium, N = 10");
+disp(trapezium_int(f, A, B, h1));
+disp("Composite trapezium, N = 20");
+disp(trapezium_int(f, A, B, h2));
+
+==> Romberg.m <==
+function [Integral,I,X] = Romberg(f,a,b,tol,kmax)
+I = zeros(kmax, kmax);
+Integral = 0;
+
+for m = 1:kmax
+  if (m == 1)
+    [~, I(1,1)] = trapez(f,a,b,0,1);
+  else
+    for n = 1:m
+      if (n == 1)
+        [~, I(1,m)] = trapez(f,a,b,I(1,m-1),m);
+      else
+        I(n, m-n+1) = I(n-1,m-n+1+1) + (I(n-1,m-n+1+1) - I(n-1,m-n+1))/(4^(n-1) - 1);
+      end
+    end
+  end
+
+    if (abs(I(m,1) - Integral) < tol)
+    X = a:((b - a)/2^(m-1)):b;
+    Integral = I(m,1);
+    return
+  else
+    Integral = I(m,1);
+    X = a:((b - a)/2^(m-1)):b;
+  end
+
+  end
+end
+
+==> gauss_int.m <==
+function I_gauss = gauss_int(f, a, b, h)
+Z = [-sqrt(3/5) 0 sqrt(3/5)];
+W = [5/9 8/9 5/9];
+h_k = h/2;
+x_mid = h*(1:(b-a)/h) + a - (0.5)*h;
+x_l = x_mid + h_k * Z(1);
+x_r = x_mid + h_k * Z(3);
+
+I_gauss = h_k * (W(1)*sum(f(x_l)) + W(2)*sum(f(x_mid)) + W(3)*sum(f(x_r)));
+
+end
+==> midpoint_int.m <==
+function I_mid = midpoint_int(f, a, b, h)
+x_k = h*(1:(b-a)/h) + a - (0.5)*h;
+I_mid = h*sum(f(x_k));
+
+end
+==> script_1.m <==a = 0;
+b = 1;
+f = @(x) sin(5*x);
+h = (b-a)./2.^(1:5);
+
+I = zeros(5, 4);
+
+for i = 1:5
+  I(i, :) = [midpoint_int(f, a, b, h(i)), trapezium_int(f, a, b, h(i)), simpson_int(f, a, b, h(i)), gauss_int(f, a, b, h(i))];
+end
+
+disp(f)
+disp(1/5*(1-cos(5)))
+disp(I)
+a = 0;
+b = pi;
+f = @(x) sin(2*x).^2;
+h = (b-a)./2.^(1:5);
+
+I = zeros(5, 4);
+
+for i = 1:5
+  I(i, :) = [midpoint_int(f, a, b, h(i)), trapezium_int(f, a, b, h(i)), simpson_int(f, a, b, h(i)), gauss_int(f, a, b, h(i))];
+end
+
+disp(f)
+disp(1/2*pi)
+disp(I)
+a = 0;
+b = 2;
+f = @(x) x.^(1/3);
+h = (b-a)./2.^(1:5);
+
+I = zeros(5, 4);
+
+for i = 1:5
+  I(i, :) = [midpoint_int(f, a, b, h(i)), trapezium_int(f, a, b, h(i)), simpson_int(f, a, b, h(i)), gauss_int(f, a, b, h(i))];
+end
+
+disp(f)
+disp(3*2^(-2/3))
+disp(I)
+a = 0;
+b = 1;
+f = @(x) (-log(x)).^(0.5);
+h = (b-a)./2.^(1:5);
+
+I = zeros(5, 2);
+
+for i = 1:5
+  I(i, :) = [midpoint_int(f, a, b, h(i)), gauss_int(f, a, b, h(i))];
+end
+
+disp(f)
+disp(1/2*pi^(0.5))
+disp(I)
+
+
+==> script_2.m <==
+a = 1i*pi/4;
+b = 1+1i;
+r = 3;
+
+z = @(phi) r*exp(1i*phi) + b;
+f = @(phi) 1/(2*pi) .* sin(z(phi)) ./ (z(phi) - a) .* r .*exp(1i.*phi);
+
+A = 0;
+B = 2*pi;
+N1 = 10;
+N2 = 20;
+h1 = (B - A) / N1;
+h2 = (B - A) / N2;
+
+disp("Target answer:");
+disp(sin(a));
+
+disp("Gauss quadrature, N = 10");
+disp(gauss_int(f, A, B, h1));
+disp("Gauss quadrature, N = 20");
+disp(gauss_int(f, A, B, h2));
+
+disp("Composite trapezium, N = 10");
+disp(trapezium_int(f, A, B, h1));
+disp("Composite trapezium, N = 20");
+disp(trapezium_int(f, A, B, h2));
+
+==> script_3.m <==a = 0;
+b = 1;
+f = @(x) sin(5*x);
+tol = 10^(-7);
+kmax = 6;
+
+[Int, I, X] = Romberg(f,a,b,tol,kmax);
+
+disp(f)
+format long;
+disp("Actual value");
+disp(1/5*(1-cos(5)));
+disp("Romberg integral, tol = 1e-7");
+disp(Int)
+format;
+disp("Table of extrapolated values");
+disp(I)
+==> script_4.m <==
+f = @(x) x.^(-1/2) .* cos(x);
+
+a = 0;
+b = pi/2;
+h1 = 2^(-4);
+h2 = 2^(-6);
+
+I_matrix = [[midpoint_int(f, a, b, h1), midpoint_int(f, a, b, h2)]
+      [gauss_int(f, a, b, h1),  gauss_int(f, a, b, h2)]];
+
+disp("Target answer: 1.95490284858");
+disp("Direct integrals");
+disp(I_matrix);
+
+==> script_4_sub1.m <==
+f = @(x) (cos(x) - 1) .* x.^(-1/2);
+
+a = 0;
+b = (pi/2);
+h1 = 2^(-4);
+h2 = 2^(-6);
+
+I_matrix = [[midpoint_int(f, a, b, h1), midpoint_int(f, a, b, h2)]
+      [gauss_int(f, a, b, h1),  gauss_int(f, a, b, h2)]
+      [trapezium_int_nan(f, a, b,h1), trapezium_int_nan(f, a, b,h2)]];
+
+I_matrix = I_matrix + (2*pi)^(1/2);
+
+disp("Target answer: 1.95490284858");
+disp("Subtract 1 term integrals");
+disp(I_matrix);
+
+==> script_4_sub2.m <==
+f = @(x) (cos(x) - 1 - x.^2/2) .* x.^(-1/2);
+
+a = 0;
+b = (pi/2);
+h1 = 2^(-4);
+h2 = 2^(-6);
+
+I_matrix = [[midpoint_int(f, a, b, h1), midpoint_int(f, a, b, h2)]
+      [gauss_int(f, a, b, h1),  gauss_int(f, a, b, h2)]
+      [trapezium_int_nan(f, a, b,h1), trapezium_int_nan(f, a, b,h2)]];
+
+I_matrix = I_matrix + (2*pi)^(1/2) + (pi/2)^(5/2) / 5;
+
+disp("Target answer: 1.95490284858");
+
+disp("Subtract 2 terms integrals");
+disp(I_matrix);
+
+==> script_4_transform.m <==
+f = @(u) 2*cos(u.^2);
+
+a = 0;
+b = (pi/2).^(1/2);
+h1 = 2^(-4);
+h2 = 2^(-6);
+
+I_matrix = [[midpoint_int(f, a, b, h1), midpoint_int(f, a, b, h2)]
+      [gauss_int(f, a, b, h1),  gauss_int(f, a, b, h2)]
+      [trapezium_int(f, a, b,h1), trapezium_int(f, a, b,h2)]];
+
+disp("Target answer: 1.95490284858");
+disp("Transform integrals");
+disp(I_matrix);
+
+==> script_5.m <==x0 = 5;
+test_f = @(x) exp(-x) - 10^-5;
+b = fzero(test_f, x0);
+
+disp("Estimate of when I_2 < 10^(-5)");
+disp(b)
+
+f = @(x) cos(x).^2 .* exp(-x);
+a = 0;
+tol = 0.0001;
+kmax = 8;
+[Int, I, X] = Romberg(f,a,b,tol,kmax);
+
+
+==> script_5b.m <==
+f = @(x) cos(x).^2;
+x_k = [0.263560   1.413400   3.59643000   7.08581000  12.64080000];
+w_k = [0.521756   0.398667   0.07594240   0.00361176   0.00002337];
+
+Int = f(x_k).*w_k;
+disp("5-point Gauss Laguerre quadrature");
+disp(Int);
+==> simpson_int.m <==
+function I_simp = simpson_int(f, a, b, h)
+N = (b-a)/h;
+x_odd = 2*h*((1:(N/2 + 1)) - 1) + a;
+x_even = 2*h*((1:(N/2)) - 1) + a + h;
+
+f_odd = f(x_odd);
+f_even = f(x_even);
+I_simp = h/3*(4*sum(f_even) + 2*sum(f_odd) - f_odd(1) - f_odd(N/2+1));
+
+end
+==> trapez.m <==function [h0, val]=trapez(f,a,b,oval,N)
+if (N == 1)
+  val=0.5*(b-a)*(feval(f,a)+feval(f,b));
+  h0=(b-a);
+else
+  i=2^(N-2);
+  h=(b-a)/i;h0=h/2;
+  x=(a+0.5*h):h:b;
+  val=0.5*(oval+h*sum(feval(f,x)));
+end
+
+==> trapezium_int.m <==
+function I_trap = trapezium_int(f, a, b, h)
+N = (b-a)/h;
+x_k = linspace(a, b, (b-a)/h + 1);
+f_k = f(x_k);
+
+I_trap = h/2*(2*sum(f_k) - f_k(1) - f_k(end));
+
+end
+==> trapezium_int_nan.m <==
+function I_trap = trapezium_int_nan(f, a, b, h)
+N = (b-a)/h;
+x_k = linspace(a, b, (b-a)/h + 1);
+f_k = f(x_k);
+
+f_k(isnan(f_k)) = 0;
+
+I_trap = h/2*(2*sum(f_k) - f_k(1) - f_k(end));
+
+end
